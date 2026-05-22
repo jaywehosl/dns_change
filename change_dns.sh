@@ -10,7 +10,7 @@ CONFIG_FILE="/etc/network/interfaces"
 RESOLVED_FILE="/etc/systemd/resolved.conf"
 
 if [ ! -f "$CONFIG_FILE" ]; then
-  echo "Ошибка: Файл $CONFIG_FILE не найден!"
+  echo "Ошибка! Файл $CONFIG_FILE не найден!"
   exit 1
 fi
 
@@ -38,10 +38,10 @@ if [ -f "$RESOLVED_FILE" ]; then
   cp "$RESOLVED_FILE" "${RESOLVED_FILE}.bak"
   echo "Создан бэкап конфигурации: ${RESOLVED_FILE}.bak"
 
-  # удаляем старые или закомментированные параметры, чтобы не было дублей
+  # удаление старых или закомментированных параметров чтобы не было дублей
   sed -i -E '/^[[:space:]]*#?[[:space:]]*(DNS|Domains|Cache|DNSStubListener)=/d' "$RESOLVED_FILE"
 
-  # если секции [Resolve] вдруг нет в файле, добавляем её в конец
+  # если секции [Resolve] вдруг нет в файле, добавление её в конец
   if ! grep -q "^\[Resolve\]" "$RESOLVED_FILE"; then
     echo -e "\n[Resolve]" >> "$RESOLVED_FILE"
   fi
@@ -51,8 +51,14 @@ if [ -f "$RESOLVED_FILE" ]; then
   
   echo "Файл $RESOLVED_FILE успешно обновлен."
 else
-  echo "Предупреждение: Файл $RESOLVED_FILE не найден, пропускаем его настройку."
+  echo "Внимание! Файл $RESOLVED_FILE не найден, пропускаем его настройку."
 fi
+
+echo "Настройка /etc/resolv.conf для правильной работы кэширующего stub-резолвера..."
+# Удаляем старый resolv.conf (файл или кривую ссылку)
+rm -f /etc/resolv.conf
+# Создаем правильную символическую ссылку на локальную заглушку-слушатель
+ln -s /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 
 echo "Применение изменений.."
 
